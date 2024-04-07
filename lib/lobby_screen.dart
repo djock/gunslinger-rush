@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:gunslinger_rush/game_screen.dart';
+import 'package:ntp/ntp.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -70,6 +71,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               }
               return Text(
                 'Player ${index + 1}: ' + _userIds[index].split('-')[0],
+                style: TextStyle(fontSize: 18),
               );
             },
           ),
@@ -104,12 +106,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
         })
         .onBroadcast(
             event: 'game_start',
-            callback: (payload, [_]) {
+            callback: (payload, [_]) async {
               // Start the game if someone has started a game with you
               final participantIds = List<String>.from(payload['participants']);
               if (participantIds.contains(myUserId)) {
                 final gameId = payload['game_id'] as String;
                 final moments = List<int>.from(payload['moments']);
+
+                final gameStart = (await NTP.now()).add(Duration(seconds: 7));
 
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -120,6 +124,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         (id) => id != myUserId,
                       ),
                       moments: moments,
+                      NTPStartTime: gameStart,
                     ),
                   ),
                 );
@@ -134,24 +139,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
         );
   }
 
-  /// Generates three random moments within the game duration,
-  /// ensuring at least a 10-second gap between them.
   void _generateRandomMoments() {
     final random = Random();
     _randomMoments = [];
 
     // Generate the first random moment
-    int firstMoment = random.nextInt(_gameDuration - 20) + 10;
+    int firstMoment = random.nextInt(9) + 1; // Random number between 1 and 10
     _randomMoments.add(firstMoment);
 
     // Generate the second random moment
-    int secondMoment =
-        firstMoment + 10 + random.nextInt(_gameDuration - firstMoment - 20);
-    _randomMoments.add(secondMoment);
+    int secondMoment = random.nextInt(9) + 1; // Random number between 1 and 10
+    _randomMoments.add(10 + secondMoment);
 
     // Generate the third random moment
-    int thirdMoment =
-        secondMoment + 10 + random.nextInt(_gameDuration - secondMoment - 10);
-    _randomMoments.add(thirdMoment);
+    int thirdMoment = random.nextInt(9) + 1; // Random number between 1 and 10
+    _randomMoments.add(20 + thirdMoment);
   }
 }
