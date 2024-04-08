@@ -26,30 +26,38 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  late Duration _offset;
   final supabaseClient = Supabase.instance.client;
   late final RealtimeChannel _gameChannel;
 
   bool _isMomentToShoot = false;
   Timer? _gameTimer;
   List<String> _shootTimestamps = [];
-  int _currentRoundIndex = 1;
   bool _shotThisRound = false;
 
-  bool _gameStarted = false;
+  bool _roundStarted = false;
+  bool _roundWarmup = false;
 
   int _playerPoints = 0;
   int _opponentPoints = 0;
 
   bool _showRoundFinish = false;
   String _roundResultText = '';
-
   Map<int, Map<String, int>> roundTimestamps = {};
+  int _currentRoundIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    var currentTime = DateTime.now().toLocal();
+    var currentTimeOffset = currentTime.add(Duration(milliseconds: ntpOffset));
+    _offset = currentTimeOffset.difference(widget.NTPStartTime);
+
     _createGame();
-    _startTimer();
+    _roundWarmup = true;
+    Future.delayed(Duration(seconds: 3), () {
+      _startRoundTimer(shootTick: _currentRoundIndex);
+    });
   }
 
   @override
@@ -60,6 +68,10 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _createGame() {
+    for (var item in widget.moments) {
+      debugPrint('Moments ' + item.toString());
+    }
+
     _gameChannel = supabaseClient.channel(
       widget.gameId,
       opts: const RealtimeChannelConfig(self: true),
@@ -91,6 +103,7 @@ class _GameScreenState extends State<GameScreen> {
               if (roundTimestamps[round]!.length == 2) {
                 // Determine the winner for the current round
                 _determineRoundWinner(round);
+                _gameTimer!.cancel();
               }
 
               _isMomentToShoot = false;
@@ -130,39 +143,28 @@ class _GameScreenState extends State<GameScreen> {
         .subscribe();
   }
 
-  void _startTimer() {
-    for (var item in widget.moments) {
-      debugPrint('Shoot time ' + item.toString());
-    }
+  void _startRoundTimer({int shootTick = 0}) {
+    setState(() {
+      _roundStarted = true;
+      if (shootTick != 0) {
+        _currentRoundIndex++;
+      }
+    });
 
-    var currentTime = DateTime.now().toLocal();
-    var currentTimeOffset = currentTime.add(Duration(milliseconds: ntpOffset));
-
-    var difference = currentTimeOffset.difference(widget.NTPStartTime);
-
-    Future.delayed(difference + Duration(seconds: 3), () async {
-      debugPrint('Game started');
+    Future.delayed(_offset, () async {
       setState(() {
-        _gameStarted = true;
+        _shotThisRound = false;
+        _roundWarmup = false;
       });
-
       _gameTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
-        debugPrint('Tick ${timer.tick}');
-        if (widget.moments.contains(timer.tick)) {
+        debugPrint(
+          'Round ${_currentRoundIndex} Tick ${timer.tick} VS ${widget.moments[shootTick]}',
+        );
+
+        if (timer.tick == widget.moments[shootTick]) {
           setState(() {
             _isMomentToShoot = true;
           });
-        }
-
-        if (timer.tick == 35) {
-          await _gameChannel.sendBroadcastMessage(
-            event: 'game_end-${widget.gameId}',
-            payload: {
-              'user': widget.userId,
-              'state': 'game_ended',
-            },
-          );
-          Navigator.of(context).pop();
         }
       });
     });
@@ -200,7 +202,7 @@ class _GameScreenState extends State<GameScreen> {
                     payload: {
                       'user': widget.userId,
                       'shoot': (await NTP.now()).millisecondsSinceEpoch +
-                          (_isMomentToShoot ? 0 : 3600),
+                          (_isMomentToShoot ? 0 : 3600000),
                       'round': _currentRoundIndex,
                     },
                   );
@@ -210,7 +212,7 @@ class _GameScreenState extends State<GameScreen> {
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return Text(
-                          'Round: $_currentRoundIndex',
+                          'Round: ${_currentRoundIndex + 1}',
                           style: TextStyle(fontSize: 18),
                         );
                       } else if (index == 1) {
@@ -220,7 +222,7 @@ class _GameScreenState extends State<GameScreen> {
                         );
                       } else if (index == 2) {
                         return Text(
-                          'Opponent: ${_playerPoints}',
+                          'Opponent: ${_opponentPoints}',
                           style: TextStyle(fontSize: 18),
                         );
                       }
@@ -236,7 +238,7 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
               ),
-            if (!_gameStarted)
+            if (_roundWarmup)
               IgnorePointer(
                 child: Align(
                   alignment: Alignment.center,
@@ -252,7 +254,7 @@ class _GameScreenState extends State<GameScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     _roundResultText,
-                    style: TextStyle(fontSize: 45),
+                    style: TextStyle(fontSize: 35),
                   ),
                 ),
               )
@@ -267,30 +269,41 @@ class _GameScreenState extends State<GameScreen> {
     final opponentTimestamp = roundTimestamps[round]![widget.opponentId];
     var roundResultText = '';
 
-    if (playerTimestamp! < opponentTimestamp!) {
-      debugPrint('Player won round $round');
-      roundResultText = 'You won round $round';
+    bool isPlayerWin = false;
+
+    if (playerTimestamp != null) {
+      if (opponentTimestamp == null) {
+        isPlayerWin = true;
+      } else {
+        isPlayerWin = playerTimestamp < opponentTimestamp;
+      }
+    }
+
+    if (isPlayerWin) {
+      roundResultText = 'You won round ${round + 1}';
       _playerPoints++;
     } else {
-      debugPrint('Opponent won round $round');
-      roundResultText = 'You lost round $round';
+      roundResultText = 'You lost round ${round + 1}';
       _opponentPoints++;
+    }
+
+    if (_playerPoints == 3 || _opponentPoints == 3 || _currentRoundIndex == 6) {
+      _showMatchResult();
+      return;
     }
 
     setState(() {
       _roundResultText = roundResultText;
+    });
 
-      _currentRoundIndex++;
-      _shotThisRound = false;
+    Future.delayed(Duration(seconds: 3), () {
+      setState(() {
+        _roundResultText = '';
+        _roundWarmup = true;
+      });
 
       Future.delayed(Duration(seconds: 3), () {
-        setState(() {
-          _roundResultText = '';
-        });
-
-        if (_currentRoundIndex == 3) {
-          _showMatchResult();
-        }
+        _startRoundTimer(shootTick: _currentRoundIndex + 1);
       });
     });
   }

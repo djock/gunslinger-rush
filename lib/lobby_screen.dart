@@ -143,16 +143,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final random = Random();
     _randomMoments = [];
 
-    // Generate the first random moment
-    int firstMoment = random.nextInt(9) + 1; // Random number between 1 and 10
-    _randomMoments.add(firstMoment);
-
-    // Generate the second random moment
-    int secondMoment = random.nextInt(9) + 1; // Random number between 1 and 10
-    _randomMoments.add(10 + secondMoment);
-
-    // Generate the third random moment
-    int thirdMoment = random.nextInt(9) + 1; // Random number between 1 and 10
-    _randomMoments.add(20 + thirdMoment);
+    for (int i = 0; i < 6; i++) {
+      _randomMoments.add(random.nextInt(9) + 1);
+    }
   }
 }
