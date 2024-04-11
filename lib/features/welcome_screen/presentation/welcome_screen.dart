@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gunslinger_rush/features/common/domain/player.dart';
+import 'package:gunslinger_rush/features/common/presentation/GameContainer.dart';
 import 'package:gunslinger_rush/features/common/presentation/animated_button.dart';
 import 'package:gunslinger_rush/features/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/features/common/presentation/router/screens.dart';
@@ -38,13 +39,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/grunge-paper-background.jpeg'),
-          fit: BoxFit.cover,
-        ),
-      ),
+    return GameContainer(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         resizeToAvoidBottomInset: false,
@@ -56,9 +51,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               Text(
                 'MOST WANTED',
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .displayLarge!
+                style: context.textTheme.displayLarge!
                     .copyWith(fontFamily: 'Carnevalee', fontSize: 90),
               ),
               ref.watch(welcomeScreenServiceProvider).when(
@@ -98,22 +91,15 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                               onPressed: _onSetUsernamePressed,
                               isButtonEnabled: _isButtonEnabled,
                               child: Text(
-                                '⌖ Start Game ⌖',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      fontFamily: 'Carnevalee',
-                                      fontSize: 32,
-                                      color: _isButtonEnabled
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withAlpha(350),
-                                    ),
+                                'Enter Saloon',
+                                style: context.textTheme.titleLarge?.copyWith(
+                                  fontFamily: 'Carnevalee',
+                                  fontSize: 32,
+                                  color: _isButtonEnabled
+                                      ? context.colorScheme.primary
+                                      : context.colorScheme.primary
+                                          .withAlpha(350),
+                                ),
                               ),
                             ),
                           ],
@@ -128,11 +114,10 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       return Text(
                         player.name,
                         textAlign: TextAlign.center,
-                        style:
-                            Theme.of(context).textTheme.displayLarge!.copyWith(
-                                  fontFamily: 'Carnevalee',
-                                  fontSize: 72,
-                                ),
+                        style: context.textTheme.displayLarge!.copyWith(
+                          fontFamily: 'Carnevalee',
+                          fontSize: 72,
+                        ),
                       );
                     },
                     error: (error, stackTrace) => Text(error.toString()),
@@ -143,19 +128,19 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   Text(
                     _getRandomRewardText(),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                          fontFamily: 'Carnevalee',
-                          fontSize: 60,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                    style: context.textTheme.displayLarge!.copyWith(
+                      fontFamily: 'Carnevalee',
+                      fontSize: 60,
+                      color: context.colorScheme.error,
+                    ),
                   ),
                   Text(
                     'REWARD',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                          fontFamily: 'Carnevalee',
-                          fontSize: 72,
-                        ),
+                    style: context.textTheme.displayLarge!.copyWith(
+                      fontFamily: 'Carnevalee',
+                      fontSize: 72,
+                    ),
                   ),
                 ],
               ),
