@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:gunslinger_rush/game_screen.dart';
+import 'package:gunslinger_rush/features/pvp/presentation/pvp_game_screen.dart';
 import 'package:ntp/ntp.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class LobbyScreen extends StatefulWidget {
-  LobbyScreen({Key? key}) : super(key: key);
+  const LobbyScreen({super.key});
 
   @override
   State<LobbyScreen> createState() => _LobbyScreenState();
@@ -19,8 +19,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   List<String> _userIds = [];
   final myUserId = const Uuid().v4();
   List<int> _randomMoments = [];
-  int _gameDuration = 60;
-
   late final RealtimeChannel _lobbyChannel;
 
   @override
@@ -28,14 +26,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return SafeArea(
       child: Scaffold(
         body: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: ListView.builder(
             itemCount: _userIds.length + 1,
             itemBuilder: (context, index) {
               if (index == _userIds.length) {
                 return Column(
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       height: 16,
                     ),
                     ElevatedButton(
@@ -56,7 +54,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     myUserId,
                                   ],
                                   'game_id': gameId,
-                                  'moments': _randomMoments
+                                  'moments': _randomMoments,
                                 },
                               );
                             },
@@ -70,8 +68,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 );
               }
               return Text(
-                'Player ${index + 1}: ' + _userIds[index].split('-')[0],
-                style: TextStyle(fontSize: 18),
+                'Player ${index + 1}: ${_userIds[index].split('-')[0]}',
+                style: const TextStyle(fontSize: 18),
               );
             },
           ),
@@ -99,37 +97,44 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
           setState(() {
             _userIds = presenceStates
-                .map((presenceState) => (presenceState.presences.first)
-                    .payload['user_id'] as String)
+                .map(
+                  (presenceState) => presenceState
+                      .presences.first.payload['user_id'] as String,
+                )
                 .toList();
           });
         })
         .onBroadcast(
-            event: 'game_start',
-            callback: (payload, [_]) async {
-              // Start the game if someone has started a game with you
-              final participantIds = List<String>.from(payload['participants']);
-              if (participantIds.contains(myUserId)) {
-                final gameId = payload['game_id'] as String;
-                final moments = List<int>.from(payload['moments']);
+          event: 'game_start',
+          callback: (payload, [_]) async {
+            // Start the game if someone has started a game with you
+            final participantIds =
+                List<String>.from(payload['participants'] as List);
+            if (participantIds.contains(myUserId)) {
+              final gameId = payload['game_id'] as String;
+              final moments = List<int>.from(payload['moments'] as List);
 
-                final gameStart = (await NTP.now()).add(Duration(seconds: 7));
+              final gameStart =
+                  (await NTP.now()).add(const Duration(seconds: 7));
 
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => GameScreen(
+              if (mounted) {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => PvPGameScreen(
                       gameId: gameId,
                       userId: myUserId,
                       opponentId: participantIds.firstWhere(
                         (id) => id != myUserId,
                       ),
                       moments: moments,
-                      NTPStartTime: gameStart,
+                      ntpStartTime: gameStart,
                     ),
                   ),
                 );
               }
-            })
+            }
+          },
+        )
         .subscribe(
           (status, _) async {
             if (status == RealtimeSubscribeStatus.subscribed) {
@@ -143,7 +148,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final random = Random();
     _randomMoments = [];
 
-    for (int i = 0; i < 6; i++) {
+    for (var i = 0; i < 6; i++) {
       _randomMoments.add(random.nextInt(9) + 1);
     }
   }

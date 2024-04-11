@@ -5,43 +5,41 @@ import 'package:gunslinger_rush/main.dart';
 import 'package:ntp/ntp.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class GameScreen extends StatefulWidget {
-  GameScreen({
-    Key? key,
+class PvPGameScreen extends StatefulWidget {
+  const PvPGameScreen({
+    super.key,
     required this.gameId,
     required this.userId,
     required this.opponentId,
     required this.moments,
-    required this.NTPStartTime,
-  }) : super(key: key);
+    required this.ntpStartTime,
+  });
 
   final String gameId;
   final String userId;
   final String opponentId;
   final List<int> moments;
-  final DateTime NTPStartTime;
+  final DateTime ntpStartTime;
 
   @override
-  State<GameScreen> createState() => _GameScreenState();
+  State<PvPGameScreen> createState() => _PvPGameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _PvPGameScreenState extends State<PvPGameScreen> {
   late Duration _offset;
   final supabaseClient = Supabase.instance.client;
   late final RealtimeChannel _gameChannel;
 
   bool _isMomentToShoot = false;
   Timer? _gameTimer;
-  List<String> _shootTimestamps = [];
+  final List<String> _shootTimestamps = [];
   bool _shotThisRound = false;
 
-  bool _roundStarted = false;
   bool _roundWarmup = false;
 
   int _playerPoints = 0;
   int _opponentPoints = 0;
 
-  bool _showRoundFinish = false;
   String _roundResultText = '';
   Map<int, Map<String, int>> roundTimestamps = {};
   int _currentRoundIndex = 0;
@@ -49,13 +47,14 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    var currentTime = DateTime.now().toLocal();
-    var currentTimeOffset = currentTime.add(Duration(milliseconds: ntpOffset));
-    _offset = currentTimeOffset.difference(widget.NTPStartTime);
+    final currentTime = DateTime.now().toLocal();
+    final currentTimeOffset =
+        currentTime.add(Duration(milliseconds: ntpOffset));
+    _offset = currentTimeOffset.difference(widget.ntpStartTime);
 
     _createGame();
     _roundWarmup = true;
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       _startRoundTimer(shootTick: _currentRoundIndex);
     });
   }
@@ -68,8 +67,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _createGame() {
-    for (var item in widget.moments) {
-      debugPrint('Moments ' + item.toString());
+    for (final item in widget.moments) {
+      debugPrint('Moments $item');
     }
 
     _gameChannel = supabaseClient.channel(
@@ -88,10 +87,8 @@ class _GameScreenState extends State<GameScreen> {
                 DateTime.fromMillisecondsSinceEpoch(shootTimestamp);
 
             setState(() {
-              _shootTimestamps.add('[$round]' +
-                  user.split('-')[0] +
-                  ' ' +
-                  shootDateTime.toString());
+              _shootTimestamps
+                  .add('[$round]${user.split('-')[0]} $shootDateTime');
 
               // Store the timestamp for the current round
               if (!roundTimestamps.containsKey(round)) {
@@ -118,7 +115,7 @@ class _GameScreenState extends State<GameScreen> {
 
             if (state == 'game_ended') {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content: Text('Game ended'),
                 ),
               );
@@ -126,14 +123,14 @@ class _GameScreenState extends State<GameScreen> {
 
             if (state == 'user_left' && user == widget.opponentId) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
+                const SnackBar(
                   content:
                       Text('Your opponent left, closing the game in 3 seconds'),
                 ),
               );
             }
 
-            Future.delayed(Duration(seconds: 3), () {
+            Future.delayed(const Duration(seconds: 3), () {
               if (mounted) {
                 Navigator.of(context).pop();
               }
@@ -145,7 +142,6 @@ class _GameScreenState extends State<GameScreen> {
 
   void _startRoundTimer({int shootTick = 0}) {
     setState(() {
-      _roundStarted = true;
       if (shootTick != 0) {
         _currentRoundIndex++;
       }
@@ -156,9 +152,9 @@ class _GameScreenState extends State<GameScreen> {
         _shotThisRound = false;
         _roundWarmup = false;
       });
-      _gameTimer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
         debugPrint(
-          'Round ${_currentRoundIndex} Tick ${timer.tick} VS ${widget.moments[shootTick]}',
+          'Round $_currentRoundIndex Tick ${timer.tick} VS ${widget.moments[shootTick]}',
         );
 
         if (timer.tick == widget.moments[shootTick]) {
@@ -174,64 +170,69 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Game Screen'),
-        leading: BackButton(onPressed: () async {
-          await _gameChannel.sendBroadcastMessage(
-            event: 'game_end-${widget.gameId}',
-            payload: {
-              'user': widget.userId,
-              'state': 'user_left',
-            },
-          );
-          Navigator.of(context).pop();
-        }),
+        title: const Text('Game Screen'),
+        leading: BackButton(
+          onPressed: () async {
+            await _gameChannel.sendBroadcastMessage(
+              event: 'game_end-${widget.gameId}',
+              payload: {
+                'user': widget.userId,
+                'state': 'user_left',
+              },
+            );
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Stack(
           children: [
             GestureDetector(
-                onTap: () async {
-                  if (_shotThisRound) {
-                    return;
-                  }
+              onTap: () async {
+                if (_shotThisRound) {
+                  return;
+                }
 
-                  _shotThisRound = true;
-                  await _gameChannel.sendBroadcastMessage(
-                    event: 'game_state-${widget.gameId}',
-                    payload: {
-                      'user': widget.userId,
-                      'shoot': (await NTP.now()).millisecondsSinceEpoch +
-                          (_isMomentToShoot ? 0 : 3600000),
-                      'round': _currentRoundIndex,
-                    },
-                  );
+                _shotThisRound = true;
+                await _gameChannel.sendBroadcastMessage(
+                  event: 'game_state-${widget.gameId}',
+                  payload: {
+                    'user': widget.userId,
+                    'shoot': (await NTP.now()).millisecondsSinceEpoch +
+                        (_isMomentToShoot ? 0 : 3600000),
+                    'round': _currentRoundIndex,
+                  },
+                );
+              },
+              child: ListView.builder(
+                itemCount: _shootTimestamps.length + 3,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Text(
+                      'Round: ${_currentRoundIndex + 1}',
+                      style: const TextStyle(fontSize: 18),
+                    );
+                  } else if (index == 1) {
+                    return Text(
+                      'You: $_playerPoints',
+                      style: const TextStyle(fontSize: 18),
+                    );
+                  } else if (index == 2) {
+                    return Text(
+                      'Opponent: $_opponentPoints',
+                      style: const TextStyle(fontSize: 18),
+                    );
+                  }
+                  return Text(_shootTimestamps[index - 3]);
                 },
-                child: ListView.builder(
-                    itemCount: _shootTimestamps.length + 3,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return Text(
-                          'Round: ${_currentRoundIndex + 1}',
-                          style: TextStyle(fontSize: 18),
-                        );
-                      } else if (index == 1) {
-                        return Text(
-                          'You: ${_playerPoints}',
-                          style: TextStyle(fontSize: 18),
-                        );
-                      } else if (index == 2) {
-                        return Text(
-                          'Opponent: ${_opponentPoints}',
-                          style: TextStyle(fontSize: 18),
-                        );
-                      }
-                      return Text(_shootTimestamps[index - 3]);
-                    })),
+              ),
+            ),
             if (_isMomentToShoot && !_shotThisRound)
-              IgnorePointer(
+              const IgnorePointer(
                 child: Align(
-                  alignment: Alignment.center,
                   child: Text(
                     'Shoot!',
                     style: TextStyle(fontSize: 45),
@@ -239,9 +240,8 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               ),
             if (_roundWarmup)
-              IgnorePointer(
+              const IgnorePointer(
                 child: Align(
-                  alignment: Alignment.center,
                   child: Text(
                     'Get ready!',
                     style: TextStyle(fontSize: 45),
@@ -251,13 +251,12 @@ class _GameScreenState extends State<GameScreen> {
             if (_roundResultText != '')
               IgnorePointer(
                 child: Align(
-                  alignment: Alignment.center,
                   child: Text(
                     _roundResultText,
-                    style: TextStyle(fontSize: 35),
+                    style: const TextStyle(fontSize: 35),
                   ),
                 ),
-              )
+              ),
           ],
         ),
       ),
@@ -269,7 +268,7 @@ class _GameScreenState extends State<GameScreen> {
     final opponentTimestamp = roundTimestamps[round]![widget.opponentId];
     var roundResultText = '';
 
-    bool isPlayerWin = false;
+    var isPlayerWin = false;
 
     if (playerTimestamp != null) {
       if (opponentTimestamp == null) {
@@ -296,13 +295,13 @@ class _GameScreenState extends State<GameScreen> {
       _roundResultText = roundResultText;
     });
 
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       setState(() {
         _roundResultText = '';
         _roundWarmup = true;
       });
 
-      Future.delayed(Duration(seconds: 3), () {
+      Future.delayed(const Duration(seconds: 3), () {
         _startRoundTimer(shootTick: _currentRoundIndex + 1);
       });
     });
@@ -316,12 +315,12 @@ class _GameScreenState extends State<GameScreen> {
       matchResult = 'You lost the match.';
     }
 
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: Text('Match Result'),
+          title: const Text('Match Result'),
           content: Text(matchResult),
           actions: [
             TextButton(
@@ -329,7 +328,7 @@ class _GameScreenState extends State<GameScreen> {
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         );
