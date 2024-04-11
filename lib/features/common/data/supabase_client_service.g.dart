@@ -1,27 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'welcome_screen_service.dart';
+part of 'supabase_client_service.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$welcomeScreenServiceHash() =>
-    r'657fb4f4545be971c679f58b820caa2a92e3c39f';
+String _$supabaseClientServiceHash() =>
+    r'8b63f348380456c5c0c0a121ecf78cb5d24d69c6';
 
-/// See also [WelcomeScreenService].
-@ProviderFor(WelcomeScreenService)
-final welcomeScreenServiceProvider =
-    AutoDisposeAsyncNotifierProvider<WelcomeScreenService, Player?>.internal(
-  WelcomeScreenService.new,
-  name: r'welcomeScreenServiceProvider',
+/// See also [SupabaseClientService].
+@ProviderFor(SupabaseClientService)
+final supabaseClientServiceProvider =
+    NotifierProvider<SupabaseClientService, SupabaseClient>.internal(
+  SupabaseClientService.new,
+  name: r'supabaseClientServiceProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$welcomeScreenServiceHash,
+      : _$supabaseClientServiceHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$WelcomeScreenService = AutoDisposeAsyncNotifier<Player?>;
+typedef _$SupabaseClientService = Notifier<SupabaseClient>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member
