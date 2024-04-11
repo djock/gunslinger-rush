@@ -38,7 +38,6 @@ class WelcomeScreenService extends _$WelcomeScreenService {
 
   Future<void> saveUser(String name) async {
     final user = User(id: const Uuid().v4(), name: name);
-    ref.read(loggerServiceProvider).i('saveUser called: $user');
 
     final secureStorage = ref.read(secureStorageServiceProvider);
     final userJson = jsonEncode(user.toJson());
