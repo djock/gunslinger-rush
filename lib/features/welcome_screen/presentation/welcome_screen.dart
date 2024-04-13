@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gunslinger_rush/common/data/logger_service.dart';
 import 'package:gunslinger_rush/common/data/random_list_element_service.dart';
 import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:gunslinger_rush/common/presentation/animated_button.dart';
@@ -7,7 +10,10 @@ import 'package:gunslinger_rush/common/presentation/game_container.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
 import 'package:gunslinger_rush/features/welcome_screen/application/welcome_screen_service.dart';
+import 'package:ntp/ntp.dart';
+import 'package:uuid/uuid.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
@@ -107,7 +113,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
                       Future.delayed(
                         const Duration(seconds: 2),
-                        () => _openLobbyScreen(player),
+                        () => _openFakeGameScreen(player),
                       );
 
                       return Text(
@@ -169,5 +175,48 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     ref
         .read(gameRouterProvider)
         .pushReplacement(Screens.lobbyScreen, extra: player);
+  }
+
+  final List<String> _fakeOpponents = [
+    'The Good',
+    'The Bad',
+    'The Ugly',
+  ];
+
+  Future<void> _openFakeGameScreen(Player player) async {
+    final gameId = const Uuid().v4();
+    final moments = _generateRandomMoments();
+
+    final gameStart = (await NTP.now()).add(const Duration(seconds: 7));
+
+    ref.read(loggerServiceProvider).i('Game started!');
+    final router = ref.read(gameRouterProvider);
+
+    final opponent = Player(
+      id: '123',
+      name: ref.read(getRandomElementFromListProvider(_fakeOpponents)),
+    );
+
+    await router.push(
+      Screens.pvpGameScreen,
+      extra: GameData(
+        gameId: gameId,
+        userId: player.id,
+        opponentId: opponent.id,
+        moments: moments,
+        ntpStartTime: gameStart,
+      ),
+    );
+  }
+
+  List<int> _generateRandomMoments() {
+    final random = Random();
+    final randomMoments = <int>[];
+
+    for (var i = 0; i < 6; i++) {
+      randomMoments.add(random.nextInt(9) + 1);
+    }
+
+    return randomMoments;
   }
 }
