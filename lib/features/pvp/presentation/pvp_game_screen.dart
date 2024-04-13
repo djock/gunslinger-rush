@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
 import 'package:gunslinger_rush/main.dart';
 import 'package:ntp/ntp.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,18 +9,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PvPGameScreen extends StatefulWidget {
   const PvPGameScreen({
     super.key,
-    required this.gameId,
-    required this.userId,
-    required this.opponentId,
-    required this.moments,
-    required this.ntpStartTime,
+    required this.gameData,
   });
 
-  final String gameId;
-  final String userId;
-  final String opponentId;
-  final List<int> moments;
-  final DateTime ntpStartTime;
+  final GameData gameData;
 
   @override
   State<PvPGameScreen> createState() => _PvPGameScreenState();
@@ -50,7 +43,7 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
     final currentTime = DateTime.now().toLocal();
     final currentTimeOffset =
         currentTime.add(Duration(milliseconds: ntpOffset));
-    _offset = currentTimeOffset.difference(widget.ntpStartTime);
+    _offset = currentTimeOffset.difference(widget.gameData.ntpStartTime);
 
     _createGame();
     _roundWarmup = true;
@@ -67,18 +60,18 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
   }
 
   void _createGame() {
-    for (final item in widget.moments) {
+    for (final item in widget.gameData.moments) {
       debugPrint('Moments $item');
     }
 
     _gameChannel = supabaseClient.channel(
-      widget.gameId,
+      widget.gameData.gameId,
       opts: const RealtimeChannelConfig(self: true),
     );
 
     _gameChannel
         .onBroadcast(
-          event: 'game_state-${widget.gameId}',
+          event: 'game_state-${widget.gameData.gameId}',
           callback: (payload, [_]) {
             final user = payload['user'] as String;
             final shootTimestamp = payload['shoot'] as int;
@@ -108,7 +101,7 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
           },
         )
         .onBroadcast(
-          event: 'game_end-${widget.gameId}',
+          event: 'game_end-${widget.gameData.gameId}',
           callback: (payload, [_]) {
             final user = payload['user'] as String;
             final state = payload['state'] as String;
@@ -121,7 +114,7 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
               );
             }
 
-            if (state == 'user_left' && user == widget.opponentId) {
+            if (state == 'user_left' && user == widget.gameData.opponentId) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content:
@@ -154,10 +147,10 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
       });
       _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
         debugPrint(
-          'Round $_currentRoundIndex Tick ${timer.tick} VS ${widget.moments[shootTick]}',
+          'Round $_currentRoundIndex Tick ${timer.tick} VS ${widget.gameData.moments[shootTick]}',
         );
 
-        if (timer.tick == widget.moments[shootTick]) {
+        if (timer.tick == widget.gameData.moments[shootTick]) {
           setState(() {
             _isMomentToShoot = true;
           });
@@ -174,9 +167,9 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
         leading: BackButton(
           onPressed: () async {
             await _gameChannel.sendBroadcastMessage(
-              event: 'game_end-${widget.gameId}',
+              event: 'game_end-${widget.gameData.gameId}',
               payload: {
-                'user': widget.userId,
+                'user': widget.gameData.userId,
                 'state': 'user_left',
               },
             );
@@ -198,9 +191,9 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
 
                 _shotThisRound = true;
                 await _gameChannel.sendBroadcastMessage(
-                  event: 'game_state-${widget.gameId}',
+                  event: 'game_state-${widget.gameData.gameId}',
                   payload: {
-                    'user': widget.userId,
+                    'user': widget.gameData.userId,
                     'shoot': (await NTP.now()).millisecondsSinceEpoch +
                         (_isMomentToShoot ? 0 : 3600000),
                     'round': _currentRoundIndex,
@@ -264,8 +257,9 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
   }
 
   void _determineRoundWinner(int round) {
-    final playerTimestamp = roundTimestamps[round]![widget.userId];
-    final opponentTimestamp = roundTimestamps[round]![widget.opponentId];
+    final playerTimestamp = roundTimestamps[round]![widget.gameData.userId];
+    final opponentTimestamp =
+        roundTimestamps[round]![widget.gameData.opponentId];
     var roundResultText = '';
 
     var isPlayerWin = false;

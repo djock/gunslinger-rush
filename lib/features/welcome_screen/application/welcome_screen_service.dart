@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:gunslinger_rush/features/common/data/logger_service.dart';
 import 'package:gunslinger_rush/features/common/data/secure_storage_service.dart';
-import 'package:gunslinger_rush/features/common/domain/user.dart';
+import 'package:gunslinger_rush/features/common/domain/player.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -11,11 +11,11 @@ part 'welcome_screen_service.g.dart';
 @riverpod
 class WelcomeScreenService extends _$WelcomeScreenService {
   @override
-  Future<User?> build() {
+  Future<Player?> build() {
     return _getUser();
   }
 
-  Future<User?> _getUser() async {
+  Future<Player?> _getUser() async {
     final secureStorage = ref.read(secureStorageServiceProvider);
 
     if (await secureStorage.containsKey(key: 'user')) {
@@ -24,7 +24,7 @@ class WelcomeScreenService extends _$WelcomeScreenService {
       if (userJson == null) return null;
 
       final userMap = jsonDecode(userJson) as Map<String, dynamic>;
-      final user = User.fromJson(userMap);
+      final user = Player.fromJson(userMap);
 
       ref.read(loggerServiceProvider).i('User loaded: $user');
 
@@ -36,11 +36,13 @@ class WelcomeScreenService extends _$WelcomeScreenService {
     return null;
   }
 
-  Future<void> saveUser(String name) async {
-    final user = User(id: const Uuid().v4(), name: name);
+  Future<Player> savePlayer(String name) async {
+    final player = Player(id: const Uuid().v4(), name: name);
 
     final secureStorage = ref.read(secureStorageServiceProvider);
-    final userJson = jsonEncode(user.toJson());
-    await secureStorage.write(key: 'user', value: userJson);
+    final playerJson = jsonEncode(player.toJson());
+    await secureStorage.write(key: 'user', value: playerJson);
+
+    return player;
   }
 }

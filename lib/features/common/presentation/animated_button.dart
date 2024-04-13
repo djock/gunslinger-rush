@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AnimatedButton extends StatefulWidget {
   const AnimatedButton({
@@ -25,24 +26,38 @@ class AnimatedButtonState extends State<AnimatedButton> {
       duration: const Duration(
         milliseconds: 200,
       ), // Adjust the animation duration
-      child: GestureDetector(
-        onTapDown: widget.isButtonEnabled
-            ? (_) {
-                setState(() {
-                  _isButtonScaled = true;
-                });
-
-                widget.onPressed();
-              }
-            : null,
-        onTapUp: widget.isButtonEnabled
-            ? (_) {
-                setState(() {
-                  _isButtonScaled = false;
-                });
-              }
-            : null,
-        child: widget.child,
+      child: Consumer(
+        builder: (context, ref, child) {
+          return GestureDetector(
+            onTapDown: widget.isButtonEnabled
+                ? (_) {
+                    setState(() {
+                      _isButtonScaled = true;
+                    });
+                  }
+                : null,
+            onTap: widget.isButtonEnabled
+                ? () {
+                    widget.onPressed();
+                  }
+                : null,
+            onTapUp: widget.isButtonEnabled
+                ? (_) {
+                    setState(() {
+                      _isButtonScaled = false;
+                    });
+                  }
+                : null,
+            onTapCancel: widget.isButtonEnabled
+                ? () {
+                    setState(() {
+                      _isButtonScaled = false;
+                    });
+                  }
+                : null,
+            child: widget.child,
+          );
+        },
       ),
     );
   }
