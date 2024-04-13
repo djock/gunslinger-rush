@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/GameContainer.dart';
 import 'package:gunslinger_rush/features/common/presentation/animated_button.dart';
+import 'package:gunslinger_rush/features/common/presentation/game_container.dart';
 import 'package:gunslinger_rush/features/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/features/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/features/common/presentation/theme/theme_build_context_extensions.dart';
@@ -80,7 +80,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                     width: 2,
                                   ),
                                 ),
-                                hintText: 'Enter your outlaw name',
+                                hintText: 'Your outlaw name',
                                 hintStyle: const TextStyle(
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -91,7 +91,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                               onPressed: _onSetUsernamePressed,
                               isButtonEnabled: _isButtonEnabled,
                               child: Text(
-                                'Enter Saloon',
+                                'Enter Town',
                                 style: context.textTheme.titleLarge?.copyWith(
                                   fontFamily: 'Carnevalee',
                                   fontSize: 32,

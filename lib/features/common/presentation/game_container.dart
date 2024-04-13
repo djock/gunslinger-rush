@@ -10,7 +10,7 @@ class GameContainer extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/grunge-paper-background.jpeg'),
+          image: AssetImage('assets/images/grunge_paper_background.jpeg'),
           fit: BoxFit.cover,
         ),
       ),

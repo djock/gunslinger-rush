@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/GameContainer.dart';
 import 'package:gunslinger_rush/features/common/presentation/animated_button.dart';
+import 'package:gunslinger_rush/features/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/features/common/presentation/slideable_text.dart';
 import 'package:gunslinger_rush/features/common/presentation/theme/theme_build_context_extensions.dart';
 import 'package:gunslinger_rush/features/lobby/presentation/lobby_screen_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -36,12 +37,45 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                 const SizedBox(
                   height: 48,
                 ),
-                Text(
-                  'Gunslingers waiting:',
-                  textAlign: TextAlign.center,
-                  style: context.textTheme.displayLarge!.copyWith(
-                    fontFamily: 'Carnevalee',
-                    fontSize: 42,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Align(
+                            child: Image.asset(
+                              'assets/images/saloon_doors.png',
+                              color: Colors.brown.withAlpha(400),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 15,
+                            left: 0,
+                            right: 0,
+                            child: Text(
+                              'Saloon',
+                              textAlign: TextAlign.center,
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 72,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Align(
+                  child: Text(
+                    'Gunslingers waiting:',
+                    textAlign: TextAlign.center,
+                    style: context.textTheme.displayLarge!.copyWith(
+                      fontFamily: 'Carnevalee',
+                      fontSize: 28,
+                    ),
                   ),
                 ),
                 ListView.builder(
@@ -64,7 +98,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                                   : '⌖ Start Game ⌖',
                               style: context.textTheme.titleLarge?.copyWith(
                                 fontFamily: 'Carnevalee',
-                                fontSize: 32,
+                                fontSize: lobbyPlayers.length < 2 ? 20 : 32,
                                 color: lobbyPlayers.length < 2
                                     ? context.colorScheme.primary.withAlpha(350)
                                     : context.colorScheme.primary,
@@ -74,11 +108,9 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                         ],
                       );
                     }
-                    return Text(
-                      '- ${lobbyPlayers[index].name.split('-')[0]}',
-                      style: context.textTheme.headlineMedium!.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+
+                    return SlideableText(
+                      text: lobbyPlayers[index].name.split('-')[0],
                     );
                   },
                 ),
