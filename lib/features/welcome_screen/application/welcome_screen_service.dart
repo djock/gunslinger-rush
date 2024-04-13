@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:gunslinger_rush/features/common/data/logger_service.dart';
-import 'package:gunslinger_rush/features/common/data/secure_storage_service.dart';
-import 'package:gunslinger_rush/features/common/domain/player.dart';
+import 'package:gunslinger_rush/common/data/logger_service.dart';
+import 'package:gunslinger_rush/common/data/secure_storage_service.dart';
+import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/animated_button.dart';
-import 'package:gunslinger_rush/features/common/presentation/game_container.dart';
-import 'package:gunslinger_rush/features/common/presentation/slideable_text.dart';
-import 'package:gunslinger_rush/features/common/presentation/theme/theme_build_context_extensions.dart';
+import 'package:gunslinger_rush/common/domain/player.dart';
+import 'package:gunslinger_rush/common/presentation/animated_button.dart';
+import 'package:gunslinger_rush/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/common/presentation/slideable_text.dart';
+import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
 import 'package:gunslinger_rush/features/lobby/presentation/lobby_screen_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

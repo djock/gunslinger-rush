@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class GameContainer extends StatelessWidget {
   const GameContainer({super.key, required this.child});
