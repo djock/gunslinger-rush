@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gunslinger_rush/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_state.dart';
+import 'package:gunslinger_rush/features/pvp/presentation/game_participant.dart';
 import 'package:gunslinger_rush/features/pvp/presentation/game_screen_controller.dart';
 
 class PvPGameScreen extends ConsumerStatefulWidget {
@@ -36,8 +40,6 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
     );
   }
 
-  bool _gameStarted = false;
-
   @override
   Widget build(BuildContext context) {
     ref.listen(
@@ -48,77 +50,93 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
 
     final state = _watchGameState();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Game Screen'),
-        leading: BackButton(
-          onPressed: () async {
-            await _gameController().onLeaveGame();
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            GestureDetector(
-              onTap: () async {
-                await _gameController().onPlayerTap();
-              },
-              child: ListView.builder(
-                itemCount: state.shootTimestamps.length + 3,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Text(
-                      'Round: ${state.currentRoundIndex + 1}',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  } else if (index == 1) {
-                    return Text(
-                      'You: ${state.playerPoints}',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  } else if (index == 2) {
-                    return Text(
-                      'Opponent: ${state.opponentPoints}',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  }
-                  return Text(state.shootTimestamps[index - 3]);
-                },
+    return GameContainer(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Padding(
+          padding:
+              const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 32),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: FaIcon(
+                    FontAwesomeIcons.circleXmark,
+                    color: context.colorScheme.error,
+                    size: 40,
+                  ),
+                  onPressed: () async {
+                    await _gameController().onLeaveGame();
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
               ),
-            ),
-            if (state.isMomentToShoot && !state.shotThisRound)
-              const IgnorePointer(
-                child: Align(
-                  child: Text(
-                    'Shoot!',
-                    style: TextStyle(fontSize: 45),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    await _gameController().onPlayerTap();
+                  },
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        child: GameParticipant(
+                          player: widget.gameData.opponent,
+                          livesLeft: 3 - state.playerPoints,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GameParticipant(
+                          player: widget.gameData.player,
+                          livesLeft: 3 - state.opponentPoints,
+                        ),
+                      ),
+                      if (state.isMomentToShoot && !state.shotThisRound)
+                        IgnorePointer(
+                          child: Align(
+                            child: Text(
+                              'Shoot!',
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 45,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (state.roundWarmup)
+                        IgnorePointer(
+                          child: Align(
+                            child: Text(
+                              'Get ready!',
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 45,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (state.roundResultText != '')
+                        IgnorePointer(
+                          child: Align(
+                            child: Text(
+                              state.roundResultText,
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 35,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            if (state.roundWarmup)
-              const IgnorePointer(
-                child: Align(
-                  child: Text(
-                    'Get ready!',
-                    style: TextStyle(fontSize: 45),
-                  ),
-                ),
-              ),
-            if (state.roundResultText != '')
-              IgnorePointer(
-                child: Align(
-                  child: Text(
-                    state.roundResultText,
-                    style: const TextStyle(fontSize: 35),
-                  ),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
