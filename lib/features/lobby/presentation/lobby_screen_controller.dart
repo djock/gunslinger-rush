@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:gunslinger_rush/common/data/logger_service.dart';
-import 'package:gunslinger_rush/common/data/supabase_channel_service.dart';
+import 'package:gunslinger_rush/common/data_source/supabase_channel_service.dart';
 import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/common/presentation/router/screens.dart';

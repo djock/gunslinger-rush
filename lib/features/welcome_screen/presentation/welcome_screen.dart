@@ -1,7 +1,6 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gunslinger_rush/common/data/random_list_element_service.dart';
 import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:gunslinger_rush/common/presentation/animated_button.dart';
 import 'package:gunslinger_rush/common/presentation/game_container.dart';
@@ -126,7 +125,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               Column(
                 children: [
                   Text(
-                    _getRandomRewardText(),
+                    ref.read(getRandomElementFromListProvider(_rewards)),
                     textAlign: TextAlign.center,
                     style: context.textTheme.displayLarge!.copyWith(
                       fontFamily: 'Carnevalee',
@@ -170,10 +169,5 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     ref
         .read(gameRouterProvider)
         .pushReplacement(Screens.lobbyScreen, extra: player);
-  }
-
-  String _getRandomRewardText() {
-    final random = Random();
-    return _rewards[random.nextInt(_rewards.length)];
   }
 }
