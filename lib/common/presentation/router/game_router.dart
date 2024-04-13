@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/features/lobby/presentation/lobby_screen.dart';
-import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
 import 'package:gunslinger_rush/features/pvp/presentation/pvp_game_screen.dart';
 import 'package:gunslinger_rush/features/welcome_screen/presentation/welcome_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -33,7 +33,7 @@ class GameRouter extends _$GameRouter {
         GoRoute(
           path: Screens.pvpGameScreen,
           builder: (context, state) => PvPGameScreen(
-            gameData: state.extra! as GameData,
+            gameData: state.extra! as GameStartData,
           ),
         ),
       ],

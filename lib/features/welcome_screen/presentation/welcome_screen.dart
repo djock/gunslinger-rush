@@ -10,7 +10,7 @@ import 'package:gunslinger_rush/common/presentation/game_container.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
-import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
 import 'package:gunslinger_rush/features/welcome_screen/application/welcome_screen_service.dart';
 import 'package:ntp/ntp.dart';
 import 'package:uuid/uuid.dart';
@@ -199,10 +199,10 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
     await router.push(
       Screens.pvpGameScreen,
-      extra: GameData(
+      extra: GameStartData(
         gameId: gameId,
-        userId: player.id,
-        opponentId: opponent.id,
+        player: player,
+        opponent: opponent,
         moments: moments,
         ntpStartTime: gameStart,
       ),

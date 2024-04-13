@@ -6,7 +6,7 @@ part of 'game_router.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$gameRouterHash() => r'051607d8e6654face68b5679bc873f03ea858fe5';
+String _$gameRouterHash() => r'e08ba5ef26c9c213e9ffeaee066bc1cd1fbe23a4';
 
 /// See also [GameRouter].
 @ProviderFor(GameRouter)
