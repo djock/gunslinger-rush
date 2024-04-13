@@ -49,8 +49,6 @@ class LobbyScreenController extends _$LobbyScreenController {
                 .toList();
 
             if (participants.contains(player)) {
-              ref.read(loggerServiceProvider).i('Participant found!');
-
               final gameId = payload['game_id'] as String;
               final moments = List<int>.from(payload['moments'] as List);
 
@@ -89,6 +87,8 @@ class LobbyScreenController extends _$LobbyScreenController {
 
   Future<void> startGame(Player player) async {
     final lobbyPlayers = state.value ?? [];
+
+    ref.read(loggerServiceProvider).i('Start Game');
 
     final opponent =
         lobbyPlayers.firstWhere((lobbyPlayer) => lobbyPlayer.id != player.id);

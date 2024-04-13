@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gunslinger_rush/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_state.dart';
@@ -50,35 +51,35 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
 
     final state = _watchGameState();
 
-    return GameContainer(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Padding(
-          padding:
-              const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 32),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.circleXmark,
-                    color: context.colorScheme.error,
-                    size: 40,
+    return GestureDetector(
+      onTap: () async {
+        await _gameController().onPlayerTap();
+      },
+      child: GameContainer(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Padding(
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 32),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: FaIcon(
+                      FontAwesomeIcons.circleXmark,
+                      color: context.colorScheme.error,
+                      size: 40,
+                    ),
+                    onPressed: () async {
+                      await _gameController().onLeaveGame();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
                   ),
-                  onPressed: () async {
-                    await _gameController().onLeaveGame();
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                  },
                 ),
-              ),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await _gameController().onPlayerTap();
-                  },
+                Expanded(
                   child: Stack(
                     children: [
                       Positioned(
@@ -119,23 +120,22 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
                             ),
                           ),
                         ),
-                      if (state.roundResultText != '')
-                        IgnorePointer(
-                          child: Align(
-                            child: Text(
-                              state.roundResultText,
-                              style: context.textTheme.displayLarge!.copyWith(
-                                fontFamily: 'Carnevalee',
-                                fontSize: 35,
-                              ),
+                      IgnorePointer(
+                        child: Align(
+                          child: Text(
+                            state.roundResultText,
+                            style: context.textTheme.displayLarge!.copyWith(
+                              fontFamily: 'Carnevalee',
+                              fontSize: 35,
                             ),
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -164,9 +164,10 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                context
-                  ..pop()
-                  ..pop();
+                context.push(
+                  Screens.lobbyScreen,
+                  extra: widget.gameData.player,
+                );
               },
               child: const Text('OK'),
             ),

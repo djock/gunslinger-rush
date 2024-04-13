@@ -68,8 +68,8 @@ class GameScreenController extends _$GameScreenController {
     await _gameChannel.sendBroadcastMessage(
       event: 'game_end-${_gameStartData!.gameId}',
       payload: {
-        'player': _gameStartData!.player.id,
-        'state': 'player_left',
+        'player_id': _gameStartData!.player.id,
+        'status': 'player_left',
       },
     );
   }
@@ -117,7 +117,7 @@ class GameScreenController extends _$GameScreenController {
           event: 'game_end-$gameId',
           callback: (payload, [_]) {
             final playerId = payload['player_id'] as String;
-            final gameStatus = payload['game_status'] as String;
+            final gameStatus = payload['status'] as String;
 
             if (gameStatus == 'game_ended') {
               state = state.copyWith(
@@ -160,6 +160,7 @@ class GameScreenController extends _$GameScreenController {
             isMomentToShoot: true,
           );
         }
+        debugPrint('${timer.tick} VS ${_gameStartData!.moments[dataIndex]}');
       });
     });
   }
@@ -184,8 +185,8 @@ class GameScreenController extends _$GameScreenController {
       }
     }
 
-    var playerPoints = 0;
-    var opponentPoints = 0;
+    var playerPoints = state.playerPoints;
+    var opponentPoints = state.opponentPoints;
 
     if (isPlayerWin) {
       roundResultText = 'You won round ${round + 1}';
@@ -206,6 +207,8 @@ class GameScreenController extends _$GameScreenController {
     }
 
     state = state.copyWith(
+      playerPoints: playerPoints,
+      opponentPoints: opponentPoints,
       roundResultText: roundResultText,
     );
 
