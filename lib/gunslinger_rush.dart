@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/common/presentation/theme/game_theme.dart';
 
-class Game extends ConsumerWidget {
-  const Game({super.key});
+class GunslingerRush extends ConsumerWidget {
+  const GunslingerRush({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

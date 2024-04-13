@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gunslinger_rush/config.dart';
-import 'package:gunslinger_rush/game.dart';
+import 'package:gunslinger_rush/gunslinger_rush.dart';
 import 'package:ntp/ntp.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,7 +27,7 @@ void main() async {
 
   runApp(
     const ProviderScope(
-      child: Game(),
+      child: GunslingerRush(),
     ),
   );
 }

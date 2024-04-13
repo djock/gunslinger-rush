@@ -91,7 +91,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                           ),
                           AnimatedButton(
                             onPressed: _onStartGame,
-                            isButtonEnabled: lobbyPlayers.length < 2,
+                            isButtonEnabled: lobbyPlayers.length >= 2,
                             child: Text(
                               lobbyPlayers.length < 2
                                   ? 'Waiting for other to join'
@@ -123,6 +123,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   }
 
   Future<void> _onStartGame() async {
+    debugPrint('test');
     await ref
         .read(
           lobbyScreenControllerProvider(widget.player).notifier,

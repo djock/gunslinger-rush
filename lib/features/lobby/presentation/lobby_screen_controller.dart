@@ -1,11 +1,11 @@
 import 'dart:math';
 
 import 'package:gunslinger_rush/common/data/logger_service.dart';
-import 'package:gunslinger_rush/common/data/supabase_channel_service.dart';
+import 'package:gunslinger_rush/common/data_source/supabase_channel_service.dart';
 import 'package:gunslinger_rush/common/domain/player.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/common/presentation/router/screens.dart';
-import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
 import 'package:ntp/ntp.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,7 +31,7 @@ class LobbyScreenController extends _$LobbyScreenController {
           players = presenceStates
               .map(
                 (presenceState) => Player(
-                  id: presenceState.presences.first.payload['user_id']
+                  id: presenceState.presences.first.payload['player_id']
                       .toString(),
                   name:
                       presenceState.presences.first.payload['name'].toString(),
@@ -49,8 +49,6 @@ class LobbyScreenController extends _$LobbyScreenController {
                 .toList();
 
             if (participants.contains(player)) {
-              ref.read(loggerServiceProvider).i('Participant found!');
-
               final gameId = payload['game_id'] as String;
               final moments = List<int>.from(payload['moments'] as List);
 
@@ -62,11 +60,10 @@ class LobbyScreenController extends _$LobbyScreenController {
 
               await router.push(
                 Screens.pvpGameScreen,
-                extra: GameData(
+                extra: GameStartData(
                   gameId: gameId,
-                  userId: player.id,
-                  opponentId:
-                      participants.firstWhere((p) => p.id != player.id).id,
+                  player: player,
+                  opponent: participants.firstWhere((p) => p.id != player.id),
                   moments: moments,
                   ntpStartTime: gameStart,
                 ),
@@ -78,7 +75,7 @@ class LobbyScreenController extends _$LobbyScreenController {
           (status, _) async {
             if (status == RealtimeSubscribeStatus.subscribed) {
               await _lobbyChannel.track({
-                'user_id': player.id,
+                'player_id': player.id,
                 'name': player.name,
               });
             }
@@ -90,6 +87,8 @@ class LobbyScreenController extends _$LobbyScreenController {
 
   Future<void> startGame(Player player) async {
     final lobbyPlayers = state.value ?? [];
+
+    ref.read(loggerServiceProvider).i('Start Game');
 
     final opponent =
         lobbyPlayers.firstWhere((lobbyPlayer) => lobbyPlayer.id != player.id);

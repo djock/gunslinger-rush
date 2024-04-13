@@ -1,315 +1,160 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
-import 'package:gunslinger_rush/main.dart';
-import 'package:ntp/ntp.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gunslinger_rush/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/common/presentation/router/screens.dart';
+import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
+import 'package:gunslinger_rush/features/pvp/domain/game_state.dart';
+import 'package:gunslinger_rush/features/pvp/presentation/game_participant.dart';
+import 'package:gunslinger_rush/features/pvp/presentation/game_screen_controller.dart';
 
-class PvPGameScreen extends StatefulWidget {
+class PvPGameScreen extends ConsumerStatefulWidget {
   const PvPGameScreen({
     super.key,
     required this.gameData,
   });
 
-  final GameData gameData;
+  final GameStartData gameData;
 
   @override
-  State<PvPGameScreen> createState() => _PvPGameScreenState();
+  ConsumerState<PvPGameScreen> createState() => _PvPGameScreenState();
 }
 
-class _PvPGameScreenState extends State<PvPGameScreen> {
-  late Duration _offset;
-  final supabaseClient = Supabase.instance.client;
-  late final RealtimeChannel _gameChannel;
-
-  bool _isMomentToShoot = false;
-  Timer? _gameTimer;
-  final List<String> _shootTimestamps = [];
-  bool _shotThisRound = false;
-
-  bool _roundWarmup = false;
-
-  int _playerPoints = 0;
-  int _opponentPoints = 0;
-
-  String _roundResultText = '';
-  Map<int, Map<String, int>> roundTimestamps = {};
-  int _currentRoundIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    final currentTime = DateTime.now().toLocal();
-    final currentTimeOffset =
-        currentTime.add(Duration(milliseconds: ntpOffset));
-    _offset = currentTimeOffset.difference(widget.gameData.ntpStartTime);
-
-    _createGame();
-    _roundWarmup = true;
-    Future.delayed(const Duration(seconds: 3), () {
-      _startRoundTimer(shootTick: _currentRoundIndex);
-    });
+class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
+  GameScreenController _gameController() {
+    return ref.watch(gameScreenControllerProvider(widget.gameData).notifier);
   }
 
-  @override
-  void dispose() {
-    _gameChannel.unsubscribe();
-    _gameTimer?.cancel();
-    super.dispose();
-  }
-
-  void _createGame() {
-    for (final item in widget.gameData.moments) {
-      debugPrint('Moments $item');
-    }
-
-    _gameChannel = supabaseClient.channel(
-      widget.gameData.gameId,
-      opts: const RealtimeChannelConfig(self: true),
+  GameState _gameState() {
+    return ref.read(
+      gameScreenControllerProvider(widget.gameData),
     );
-
-    _gameChannel
-        .onBroadcast(
-          event: 'game_state-${widget.gameData.gameId}',
-          callback: (payload, [_]) {
-            final user = payload['user'] as String;
-            final shootTimestamp = payload['shoot'] as int;
-            final round = payload['round'] as int;
-            final shootDateTime =
-                DateTime.fromMillisecondsSinceEpoch(shootTimestamp);
-
-            setState(() {
-              _shootTimestamps
-                  .add('[$round]${user.split('-')[0]} $shootDateTime');
-
-              // Store the timestamp for the current round
-              if (!roundTimestamps.containsKey(round)) {
-                roundTimestamps[round] = {};
-              }
-              roundTimestamps[round]![user] = shootTimestamp;
-
-              // Check if both players have shot for the current round
-              if (roundTimestamps[round]!.length == 2) {
-                // Determine the winner for the current round
-                _determineRoundWinner(round);
-                _gameTimer!.cancel();
-              }
-
-              _isMomentToShoot = false;
-            });
-          },
-        )
-        .onBroadcast(
-          event: 'game_end-${widget.gameData.gameId}',
-          callback: (payload, [_]) {
-            final user = payload['user'] as String;
-            final state = payload['state'] as String;
-
-            if (state == 'game_ended') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Game ended'),
-                ),
-              );
-            }
-
-            if (state == 'user_left' && user == widget.gameData.opponentId) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('Your opponent left, closing the game in 3 seconds'),
-                ),
-              );
-            }
-
-            Future.delayed(const Duration(seconds: 3), () {
-              if (mounted) {
-                Navigator.of(context).pop();
-              }
-            });
-          },
-        )
-        .subscribe();
   }
 
-  void _startRoundTimer({int shootTick = 0}) {
-    setState(() {
-      if (shootTick != 0) {
-        _currentRoundIndex++;
-      }
-    });
-
-    Future.delayed(_offset, () async {
-      setState(() {
-        _shotThisRound = false;
-        _roundWarmup = false;
-      });
-      _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-        debugPrint(
-          'Round $_currentRoundIndex Tick ${timer.tick} VS ${widget.gameData.moments[shootTick]}',
-        );
-
-        if (timer.tick == widget.gameData.moments[shootTick]) {
-          setState(() {
-            _isMomentToShoot = true;
-          });
-        }
-      });
-    });
+  GameState _watchGameState() {
+    return ref.watch(
+      gameScreenControllerProvider(widget.gameData),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Game Screen'),
-        leading: BackButton(
-          onPressed: () async {
-            await _gameChannel.sendBroadcastMessage(
-              event: 'game_end-${widget.gameData.gameId}',
-              payload: {
-                'user': widget.gameData.userId,
-                'state': 'user_left',
-              },
-            );
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            GestureDetector(
-              onTap: () async {
-                if (_shotThisRound) {
-                  return;
-                }
+    ref.listen(
+      gameScreenControllerProvider(widget.gameData)
+          .select((value) => value.gameStatus),
+      _onGameStatusChange,
+    );
 
-                _shotThisRound = true;
-                await _gameChannel.sendBroadcastMessage(
-                  event: 'game_state-${widget.gameData.gameId}',
-                  payload: {
-                    'user': widget.gameData.userId,
-                    'shoot': (await NTP.now()).millisecondsSinceEpoch +
-                        (_isMomentToShoot ? 0 : 3600000),
-                    'round': _currentRoundIndex,
-                  },
-                );
-              },
-              child: ListView.builder(
-                itemCount: _shootTimestamps.length + 3,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Text(
-                      'Round: ${_currentRoundIndex + 1}',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  } else if (index == 1) {
-                    return Text(
-                      'You: $_playerPoints',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  } else if (index == 2) {
-                    return Text(
-                      'Opponent: $_opponentPoints',
-                      style: const TextStyle(fontSize: 18),
-                    );
-                  }
-                  return Text(_shootTimestamps[index - 3]);
-                },
-              ),
+    final state = _watchGameState();
+
+    return GestureDetector(
+      onTap: () async {
+        await _gameController().onPlayerTap();
+      },
+      child: GameContainer(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Padding(
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 32),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: FaIcon(
+                      FontAwesomeIcons.circleXmark,
+                      color: context.colorScheme.error,
+                      size: 40,
+                    ),
+                    onPressed: () async {
+                      await _gameController().onLeaveGame();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        child: GameParticipant(
+                          player: widget.gameData.opponent,
+                          livesLeft: 3 - state.playerPoints,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GameParticipant(
+                          player: widget.gameData.player,
+                          livesLeft: 3 - state.opponentPoints,
+                        ),
+                      ),
+                      if (state.isMomentToShoot && !state.shotThisRound)
+                        IgnorePointer(
+                          child: Align(
+                            child: Text(
+                              'Shoot!',
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 45,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (state.roundWarmup)
+                        IgnorePointer(
+                          child: Align(
+                            child: Text(
+                              'Get ready!',
+                              style: context.textTheme.displayLarge!.copyWith(
+                                fontFamily: 'Carnevalee',
+                                fontSize: 45,
+                              ),
+                            ),
+                          ),
+                        ),
+                      IgnorePointer(
+                        child: Align(
+                          child: Text(
+                            state.roundResultText,
+                            style: context.textTheme.displayLarge!.copyWith(
+                              fontFamily: 'Carnevalee',
+                              fontSize: 35,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            if (_isMomentToShoot && !_shotThisRound)
-              const IgnorePointer(
-                child: Align(
-                  child: Text(
-                    'Shoot!',
-                    style: TextStyle(fontSize: 45),
-                  ),
-                ),
-              ),
-            if (_roundWarmup)
-              const IgnorePointer(
-                child: Align(
-                  child: Text(
-                    'Get ready!',
-                    style: TextStyle(fontSize: 45),
-                  ),
-                ),
-              ),
-            if (_roundResultText != '')
-              IgnorePointer(
-                child: Align(
-                  child: Text(
-                    _roundResultText,
-                    style: const TextStyle(fontSize: 35),
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  void _determineRoundWinner(int round) {
-    final playerTimestamp = roundTimestamps[round]![widget.gameData.userId];
-    final opponentTimestamp =
-        roundTimestamps[round]![widget.gameData.opponentId];
-    var roundResultText = '';
-
-    var isPlayerWin = false;
-
-    if (playerTimestamp != null) {
-      if (opponentTimestamp == null) {
-        isPlayerWin = true;
-      } else {
-        isPlayerWin = playerTimestamp < opponentTimestamp;
-      }
-    }
-
-    if (isPlayerWin) {
-      roundResultText = 'You won round ${round + 1}';
-      _playerPoints++;
-    } else {
-      roundResultText = 'You lost round ${round + 1}';
-      _opponentPoints++;
-    }
-
-    if (_playerPoints == 3 || _opponentPoints == 3 || _currentRoundIndex == 6) {
-      _showMatchResult();
-      return;
-    }
-
-    setState(() {
-      _roundResultText = roundResultText;
-    });
-
-    Future.delayed(const Duration(seconds: 3), () {
-      setState(() {
-        _roundResultText = '';
-        _roundWarmup = true;
-      });
-
-      Future.delayed(const Duration(seconds: 3), () {
-        _startRoundTimer(shootTick: _currentRoundIndex + 1);
-      });
-    });
-  }
-
-  void _showMatchResult() {
+  Future<void> _onGameStatusChange(
+    GameStatus? previous,
+    GameStatus next,
+  ) async {
+    final state = _gameState();
     String matchResult;
-    if (_playerPoints > _opponentPoints) {
+    if (state.playerPoints > state.opponentPoints) {
       matchResult = 'You won the match!';
     } else {
       matchResult = 'You lost the match.';
     }
 
-    showDialog<void>(
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) {
@@ -319,8 +164,10 @@ class _PvPGameScreenState extends State<PvPGameScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                context.push(
+                  Screens.lobbyScreen,
+                  extra: widget.gameData.player,
+                );
               },
               child: const Text('OK'),
             ),
