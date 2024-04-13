@@ -1,4 +1,4 @@
-import 'package:gunslinger_rush/features/common/data/supabase_client_service.dart';
+import 'package:gunslinger_rush/common/data/supabase_client_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

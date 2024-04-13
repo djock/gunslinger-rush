@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/router/screens.dart';
+import 'package:gunslinger_rush/common/domain/player.dart';
+import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/features/lobby/presentation/lobby_screen.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
 import 'package:gunslinger_rush/features/pvp/presentation/pvp_game_screen.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gunslinger_rush/features/common/presentation/theme/theme_build_context_extensions.dart';
+import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
 
 class SlideableText extends StatefulWidget {
   const SlideableText({super.key, required this.text});

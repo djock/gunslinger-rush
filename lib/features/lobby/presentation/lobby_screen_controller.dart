@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:gunslinger_rush/features/common/data/logger_service.dart';
-import 'package:gunslinger_rush/features/common/data/supabase_channel_service.dart';
-import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/router/game_router.dart';
-import 'package:gunslinger_rush/features/common/presentation/router/screens.dart';
+import 'package:gunslinger_rush/common/data/logger_service.dart';
+import 'package:gunslinger_rush/common/data/supabase_channel_service.dart';
+import 'package:gunslinger_rush/common/domain/player.dart';
+import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
+import 'package:gunslinger_rush/common/presentation/router/screens.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_data.dart';
 import 'package:ntp/ntp.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

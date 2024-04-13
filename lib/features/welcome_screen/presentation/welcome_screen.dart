@@ -2,12 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gunslinger_rush/features/common/domain/player.dart';
-import 'package:gunslinger_rush/features/common/presentation/animated_button.dart';
-import 'package:gunslinger_rush/features/common/presentation/game_container.dart';
-import 'package:gunslinger_rush/features/common/presentation/router/game_router.dart';
-import 'package:gunslinger_rush/features/common/presentation/router/screens.dart';
-import 'package:gunslinger_rush/features/common/presentation/theme/theme_build_context_extensions.dart';
+import 'package:gunslinger_rush/common/domain/player.dart';
+import 'package:gunslinger_rush/common/presentation/animated_button.dart';
+import 'package:gunslinger_rush/common/presentation/game_container.dart';
+import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
+import 'package:gunslinger_rush/common/presentation/router/screens.dart';
+import 'package:gunslinger_rush/common/presentation/theme/theme_build_context_extensions.dart';
 import 'package:gunslinger_rush/features/welcome_screen/application/welcome_screen_service.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
