@@ -2,6 +2,8 @@
 
 A realtime flutter game with a very simple mechanic: tap faster than your opponent.
 
+[![Watch the video](https://img.youtube.com/vi/sAB275HK6Z8/hqdefault.jpg)](https://www.youtube.com/watch?v=sAB275HK6Z8)
+
 #### Tech under the hood:
 - [Supabase Realtime](https://supabase.com/docs/guides/realtime)
 - [Riverpod](https://riverpod.dev/)
