@@ -164,7 +164,7 @@ class _PvPGameScreenState extends ConsumerState<PvPGameScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                context.push(
+                context.pushReplacement(
                   Screens.lobbyScreen,
                   extra: widget.gameData.player,
                 );
