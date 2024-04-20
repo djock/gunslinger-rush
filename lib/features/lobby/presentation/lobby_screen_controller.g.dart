@@ -7,7 +7,7 @@ part of 'lobby_screen_controller.dart';
 // **************************************************************************
 
 String _$lobbyScreenControllerHash() =>
-    r'02d8be4218aec130e34d408e479a63a3ab9e9b77';
+    r'52596c738fa4bdf39b6c30c08d189d399ce8dc11';
 
 /// Copied from Dart SDK
 class _SystemHash {

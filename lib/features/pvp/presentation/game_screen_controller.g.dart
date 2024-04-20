@@ -7,7 +7,7 @@ part of 'game_screen_controller.dart';
 // **************************************************************************
 
 String _$gameScreenControllerHash() =>
-    r'a71b4570f53cea977ded80551717161916b2ccad';
+    r'2bb02810afd4c917b1e8482eb1d88d99adf7c9cf';
 
 /// Copied from Dart SDK
 class _SystemHash {

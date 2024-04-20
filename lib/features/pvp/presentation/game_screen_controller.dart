@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:gunslinger_rush/common/data/logger_service.dart';
 import 'package:gunslinger_rush/common/data_source/supabase_channel_service.dart';
 import 'package:gunslinger_rush/common/presentation/router/game_router.dart';
 import 'package:gunslinger_rush/features/pvp/domain/game_start_data.dart';
@@ -19,9 +20,9 @@ class GameScreenController extends _$GameScreenController {
   GameStartData? _gameStartData;
 
   final List<String> _shootTimestamps = [];
-  final Map<int, Map<String, int>> _roundTimestamps = {};
-  bool _isMomentToShoot = false;
+  final Map<int, Map<String, int>> _roundsData = {};
   late Duration _offset;
+  bool _roundComputed = false;
 
   @override
   GameState build(GameStartData gameStartData) {
@@ -52,19 +53,28 @@ class GameScreenController extends _$GameScreenController {
       shotThisRound: true,
     );
 
+    if (!state.isMomentToShoot) {
+      ref.read(loggerServiceProvider).w(
+            '${_gameStartData!.player.name} shot too early',
+          );
+    }
+
     await _gameChannel.sendBroadcastMessage(
       event: 'game_state-${_gameStartData!.gameId}',
       payload: {
         'player_id': _gameStartData!.player.id,
         'player_name': _gameStartData!.player.name,
         'shoot': (await NTP.now()).millisecondsSinceEpoch +
-            (_isMomentToShoot ? 0 : 3600000),
+            (state.isMomentToShoot ? 0 : 3600000),
         'round': state.currentRoundIndex,
+        'is_valid_shoot': state.isMomentToShoot,
       },
     );
   }
 
   Future<void> onLeaveGame() async {
+    _gameTimer?.cancel();
+
     await _gameChannel.sendBroadcastMessage(
       event: 'game_end-${_gameStartData!.gameId}',
       payload: {
@@ -72,6 +82,8 @@ class GameScreenController extends _$GameScreenController {
         'status': 'player_left',
       },
     );
+
+    await _gameChannel.unsubscribe();
   }
 
   void _createGame(String gameId) {
@@ -85,6 +97,7 @@ class GameScreenController extends _$GameScreenController {
             final playerName = payload['player_name'] as String;
             final shootTimestamp = payload['shoot'] as int;
             final round = payload['round'] as int;
+            final isValidShoot = payload['is_valid_shoot'] as bool;
             final shootDateTime =
                 DateTime.fromMillisecondsSinceEpoch(shootTimestamp);
 
@@ -92,24 +105,34 @@ class GameScreenController extends _$GameScreenController {
                 .add('[$round]${playerName.split('-')[0]} $shootDateTime');
 
             // Store the timestamp for the current round
-            if (!_roundTimestamps.containsKey(round)) {
-              _roundTimestamps[round] = {};
+            if (!_roundsData.containsKey(round)) {
+              _roundsData[round] = {};
             }
-            _roundTimestamps[round]![playerId] = shootTimestamp;
+            _roundsData[round]![playerId] = shootTimestamp;
 
             // Check if both players have shot for the current round
-            if (_roundTimestamps[round]!.length == 2) {
+            if (_roundsData[round]!.isNotEmpty) {
               // Determine the winner for the current round
-              _determineRoundWinner(round);
-              _gameTimer!.cancel();
+              // if the player shoots too early, we do not try to set round winner just yer
+              if (isValidShoot) {
+                _roundComputed = true;
+                _determineRoundWinner(round);
+              }
+
+              if (playerId == _gameStartData!.player.id) {
+                _gameTimer!.cancel();
+              }
             }
 
-            _isMomentToShoot = false;
+            // in case both players shot too early force set round winner
+            if (_roundsData[round]!.length == 2 && !_roundComputed) {
+              _setRoundDraw();
+            }
 
             state = state.copyWith(
               shootTimestamps: _shootTimestamps,
-              isMomentToShoot: _isMomentToShoot,
-              roundTimestamps: _roundTimestamps,
+              isMomentToShoot: false,
+              roundTimestamps: _roundsData,
             );
           },
         )
@@ -118,6 +141,8 @@ class GameScreenController extends _$GameScreenController {
           callback: (payload, [_]) {
             final playerId = payload['player_id'] as String;
             final gameStatus = payload['status'] as String;
+
+            _gameTimer?.cancel();
 
             if (gameStatus == 'game_ended') {
               state = state.copyWith(
@@ -142,6 +167,9 @@ class GameScreenController extends _$GameScreenController {
 
   void _startRoundTimer({int dataIndex = 0}) {
     debugPrint('Start round $dataIndex');
+
+    _roundComputed = false;
+
     if (dataIndex != 0) {
       state = state.copyWith(
         currentRoundIndex: state.currentRoundIndex + 1,
@@ -170,9 +198,8 @@ class GameScreenController extends _$GameScreenController {
       return;
     }
 
-    final playerTimestamp = _roundTimestamps[round]![_gameStartData!.player.id];
-    final opponentTimestamp =
-        _roundTimestamps[round]![_gameStartData!.opponent.id];
+    final playerTimestamp = _roundsData[round]![_gameStartData!.player.id];
+    final opponentTimestamp = _roundsData[round]![_gameStartData!.opponent.id];
     var roundResultText = '';
 
     var isPlayerWin = false;
@@ -196,9 +223,7 @@ class GameScreenController extends _$GameScreenController {
       opponentPoints++;
     }
 
-    if (playerPoints == 3 ||
-        opponentPoints == 3 ||
-        state.currentRoundIndex == 6) {
+    if (playerPoints == 3 || opponentPoints == 3) {
       state = state.copyWith(
         gameStatus: GameStatus.finished,
       );
@@ -212,6 +237,18 @@ class GameScreenController extends _$GameScreenController {
       roundResultText: roundResultText,
     );
 
+    _startNextRound();
+  }
+
+  void _setRoundDraw() {
+    state = state.copyWith(
+      roundResultText: 'Draw',
+    );
+
+    _startNextRound();
+  }
+
+  void _startNextRound() {
     Future.delayed(const Duration(seconds: 3), () {
       state = state.copyWith(
         roundResultText: '',
